@@ -2,13 +2,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.Scanner;
 
-class Auth {
+class UserData {
     String username;
     String passwordString;
     String roleString;
 
-    // Creating a new User
-    Auth(String username, String passwordString, String roleString) {
+    UserData(String username, String passwordString, String roleString) {
         this.username = username;
         this.passwordString = passwordString;
         this.roleString = roleString;
@@ -23,9 +22,8 @@ class AuthService {
 
     private static final String FILE = "Users.txt";
 
-    // Register user
-    static void register(Auth user) {
-        try (FileWriter fw = new FileWriter(FILE, true)) { // append mode
+    static void register(UserData user) {
+        try (FileWriter fw = new FileWriter(FILE, true)) {
             fw.write(user.toFileString() + "\n");
         } catch (Exception e) {
             e.printStackTrace();
@@ -34,7 +32,10 @@ class AuthService {
 
     // Login
     static String login(String username, String password) {
-        try (Scanner reader = new Scanner(new File(FILE))) {
+        File file = new File(FILE);
+        if (!file.exists()) return null;
+
+        try (Scanner reader = new Scanner(file)) {
 
             while (reader.hasNextLine()) {
                 String line = reader.nextLine();
@@ -57,6 +58,44 @@ class AuthService {
         }
 
         return null;
+    }
+
+    static UserData getUserByUsername(String username) {
+        File file = new File(FILE);
+        if (!file.exists()) return null;
+
+        try (Scanner reader = new Scanner(file)) {
+            while (reader.hasNextLine()) {
+                String line = reader.nextLine();
+                String[] data = line.split(",");
+                if (data.length < 3) continue;
+                if (data[1].equals(username)) {
+                    return new UserData(data[1], data[2], data[0]);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    static boolean hasAdmin() {
+        File file = new File(FILE);
+        if (!file.exists()) return false;
+
+        try (Scanner reader = new Scanner(file)) {
+            while (reader.hasNextLine()) {
+                String line = reader.nextLine();
+                String[] data = line.split(",");
+                if (data.length < 3) continue;
+                if ("ADMIN".equals(data[0])) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
 
@@ -87,7 +126,7 @@ public class User {
             case 2:
                 System.out.print("Enter your role: ");
                 role = sc.next();
-                Auth user = new Auth(username, password, role);
+                UserData user = new UserData(username, password, role);
                 AuthService.register(user);
                 break;
             case 3:
