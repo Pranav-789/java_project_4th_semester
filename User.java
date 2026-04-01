@@ -1,0 +1,105 @@
+import java.io.File;
+import java.io.FileWriter;
+import java.util.Scanner;
+
+class Auth {
+    String username;
+    String passwordString;
+    String roleString;
+
+    // Creating a new User
+    Auth(String username, String passwordString, String roleString) {
+        this.username = username;
+        this.passwordString = passwordString;
+        this.roleString = roleString;
+    }
+
+    public String toFileString() {
+        return roleString + "," + username + "," + passwordString;
+    }
+}
+
+class AuthService {
+
+    private static final String FILE = "Users.txt";
+
+    // Register user
+    static void register(Auth user) {
+        try (FileWriter fw = new FileWriter(FILE, true)) { // append mode
+            fw.write(user.toFileString() + "\n");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Login
+    static String login(String username, String password) {
+        try (Scanner reader = new Scanner(new File(FILE))) {
+
+            while (reader.hasNextLine()) {
+                String line = reader.nextLine();
+                String[] data = line.split(",");
+
+                if (data.length < 3)
+                    continue;
+
+                String role = data[0];
+                String fileUsername = data[1];
+                String filePassword = data[2];
+
+                if (fileUsername.equals(username) && filePassword.equals(password)) {
+                    return role;
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+}
+
+public class User {
+    static void menu(Scanner sc) {
+        System.out.println("Welcome to AuthService");
+        System.out.println("Press 1. login");
+        System.out.println("Press 2. Register");
+        System.out.println("Press 3. Exit");
+        System.out.print("Enter your choice: ");
+        int choice = sc.nextInt();
+        String username;
+        System.out.print("Enter your username: ");
+        username = sc.next();
+        String password;
+        System.out.print("Enter your password: ");
+        password = sc.next();
+        String role;
+        switch (choice) {
+            case 1:
+                role = AuthService.login(username, password);
+                if (role != null) {
+                    System.out.println("Login successful");
+                } else {
+                    System.out.println("Login failed");
+                }
+                break;
+            case 2:
+                System.out.print("Enter your role: ");
+                role = sc.next();
+                Auth user = new Auth(username, password, role);
+                AuthService.register(user);
+                break;
+            case 3:
+                System.exit(0);
+                break;
+            default:
+                System.out.println("Invalid choice");
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        menu(sc);
+    }
+}
