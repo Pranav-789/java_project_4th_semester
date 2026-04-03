@@ -2,14 +2,14 @@ import java.util.Scanner;
 
 class AdminService {
 
-    static UserData addUser(String username, String password, String role) {
+    static UserData addUser(String id, String username, String password, String role) {
         if (!role.equals("ADMIN") && !role.equals("FACULTY") && !role.equals("STUDENT")) {
             System.out.println("Invalid role");
             return null;
         }
 
-        if (AuthService.getUserByUsername(username) != null) {
-            System.out.println("User already exists");
+        if (AuthService.getUserById(id) != null || AuthService.getUserByUsername(username) != null) {
+            System.out.println("User ID or Username already exists");
             return null;
         }
 
@@ -18,7 +18,7 @@ class AdminService {
             return null;
         }
 
-        UserData user = new UserData(username, password, role);
+        UserData user = new UserData(id, username, password, role);
         AuthService.register(user);
 
         return user;
@@ -65,6 +65,9 @@ public class Admin {
             switch (choice) {
 
                 case 1:
+                    System.out.print("Enter ID: ");
+                    String id = sc.nextLine();
+
                     System.out.print("Enter username: ");
                     String username = sc.nextLine();
 
@@ -74,7 +77,7 @@ public class Admin {
                     System.out.print("Enter role (ADMIN/FACULTY/STUDENT): ");
                     String role = sc.nextLine();
 
-                    AdminService.addUser(username, password, role);
+                    AdminService.addUser(id, username, password, role);
                     break;
 
                 case 2:

@@ -3,18 +3,20 @@ import java.io.FileWriter;
 import java.util.Scanner;
 
 class UserData {
+    String id;
     String username;
     String passwordString;
     String roleString;
 
-    UserData(String username, String passwordString, String roleString) {
+    UserData(String id, String username, String passwordString, String roleString) {
+        this.id = id;
         this.username = username;
         this.passwordString = passwordString;
         this.roleString = roleString;
     }
 
     public String toFileString() {
-        return roleString + "," + username + "," + passwordString;
+        return roleString + "," + id + "," + username + "," + passwordString;
     }
 }
 
@@ -30,8 +32,8 @@ class AuthService {
         }
     }
 
-    // Login
-    static String login(String username, String password) {
+    // Login using ID or username
+    static String login(String loginId, String password) {
         File file = new File(FILE);
         if (!file.exists()) return null;
 
@@ -41,14 +43,20 @@ class AuthService {
                 String line = reader.nextLine();
                 String[] data = line.split(",");
 
-                if (data.length < 3)
+                if (data.length < 4) {
+                    // Graceful fallback if any old entries exist
+                    if (data.length >= 3) {
+                       if (data[1].equals(loginId) && data[2].equals(password)) return data[0]; 
+                    }
                     continue;
+                }
 
                 String role = data[0];
-                String fileUsername = data[1];
-                String filePassword = data[2];
+                String fileId = data[1];
+                String fileUsername = data[2];
+                String filePassword = data[3];
 
-                if (fileUsername.equals(username) && filePassword.equals(password)) {
+                if ((fileId.equals(loginId) || fileUsername.equals(loginId)) && filePassword.equals(password)) {
                     return role;
                 }
             }
@@ -60,6 +68,25 @@ class AuthService {
         return null;
     }
 
+    static UserData getUserById(String id) {
+        File file = new File(FILE);
+        if (!file.exists()) return null;
+
+        try (Scanner reader = new Scanner(file)) {
+            while (reader.hasNextLine()) {
+                String line = reader.nextLine();
+                String[] data = line.split(",");
+                if (data.length < 4) continue;
+                if (data[1].equals(id)) {
+                    return new UserData(data[1], data[2], data[3], data[0]);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     static UserData getUserByUsername(String username) {
         File file = new File(FILE);
         if (!file.exists()) return null;
@@ -68,9 +95,9 @@ class AuthService {
             while (reader.hasNextLine()) {
                 String line = reader.nextLine();
                 String[] data = line.split(",");
-                if (data.length < 3) continue;
-                if (data[1].equals(username)) {
-                    return new UserData(data[1], data[2], data[0]);
+                if (data.length < 4) continue;
+                if (data[2].equals(username)) {
+                    return new UserData(data[1], data[2], data[3], data[0]);
                 }
             }
         } catch (Exception e) {
@@ -107,16 +134,17 @@ public class User {
         System.out.println("Press 3. Exit");
         System.out.print("Enter your choice: ");
         int choice = sc.nextInt();
+        String id;
         String username;
-        System.out.print("Enter your username: ");
-        username = sc.next();
         String password;
-        System.out.print("Enter your password: ");
-        password = sc.next();
         String role;
         switch (choice) {
             case 1:
-                role = AuthService.login(username, password);
+                System.out.print("Enter your ID/username: ");
+                id = sc.next();
+                System.out.print("Enter your password: ");
+                password = sc.next();
+                role = AuthService.login(id, password);
                 if (role != null) {
                     System.out.println("Login successful");
                 } else {
@@ -124,9 +152,15 @@ public class User {
                 }
                 break;
             case 2:
+                System.out.print("Enter your ID: ");
+                id = sc.next();
+                System.out.print("Enter your username: ");
+                username = sc.next();
+                System.out.print("Enter your password: ");
+                password = sc.next();
                 System.out.print("Enter your role: ");
                 role = sc.next();
-                UserData user = new UserData(username, password, role);
+                UserData user = new UserData(id, username, password, role);
                 AuthService.register(user);
                 break;
             case 3:

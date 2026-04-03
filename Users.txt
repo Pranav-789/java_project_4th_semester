@@ -1,2 +1,3 @@
-ADMIN,Admin,Admin@123
-FACULTY,Bundbaaz,bund@123
+ADMIN,ADMIN01,Admin,Admin@123
+FACULTY,FAC01,Bundbaaz,bund@123
+STUDENT,Pranav,Pranav,pranav@30406
