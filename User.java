@@ -1,126 +1,66 @@
-import java.io.File;
-import java.io.FileWriter;
 import java.util.Scanner;
 
-class UserData {
-    String id;
-    String username;
-    String passwordString;
-    String roleString;
 
-    UserData(String id, String username, String passwordString, String roleString) {
-        this.id = id;
-        this.username = username;
-        this.passwordString = passwordString;
-        this.roleString = roleString;
+class AuthService extends AbstractFileService<BaseUser> {
+
+    public static final String FILE = "Users.txt";
+    
+    public AuthService() {
+        super(FILE);
     }
 
-    public String toFileString() {
-        return roleString + "," + id + "," + username + "," + passwordString;
-    }
-}
-
-class AuthService {
-
-    private static final String FILE = "Users.txt";
-
-    static void register(UserData user) {
-        try (FileWriter fw = new FileWriter(FILE, true)) {
-            fw.write(user.toFileString() + "\n");
-        } catch (Exception e) {
-            e.printStackTrace();
+    @Override
+    protected BaseUser parseLine(String[] data) {
+        if (data.length < 4) {
+            if (data.length >= 3) { // Legacy fallback
+                // Not ideal but preserves old format handling somewhat
+                return new Student(data[1], data[1], data[2]); 
+            }
+            return null;
         }
+        String role = data[0];
+        String id = data[1];
+        String username = data[2];
+        String password = data[3];
+
+        if (role.equals("STUDENT")) return new Student(id, username, password);
+        if (role.equals("FACULTY")) return new Faculty(id, username, password);
+        if (role.equals("ADMIN")) return new AdminUser(id, username, password);
+        
+        return null;
+    }
+
+    public void register(BaseUser user) {
+        save(user);
     }
 
     // Login using ID or username
-    static String login(String loginId, String password) {
-        File file = new File(FILE);
-        if (!file.exists()) return null;
-
-        try (Scanner reader = new Scanner(file)) {
-
-            while (reader.hasNextLine()) {
-                String line = reader.nextLine();
-                String[] data = line.split(",");
-
-                if (data.length < 4) {
-                    // Graceful fallback if any old entries exist
-                    if (data.length >= 3) {
-                       if (data[1].equals(loginId) && data[2].equals(password)) return data[0]; 
-                    }
-                    continue;
-                }
-
-                String role = data[0];
-                String fileId = data[1];
-                String fileUsername = data[2];
-                String filePassword = data[3];
-
-                if ((fileId.equals(loginId) || fileUsername.equals(loginId)) && filePassword.equals(password)) {
-                    return role;
-                }
+    public String login(String loginId, String password) {
+        for (BaseUser u : getAll()) {
+            if ((u.getId().equals(loginId) || u.getUsername().equals(loginId)) && u.getPassword().equals(password)) {
+                return u.getRole();
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    static UserData getUserById(String id) {
-        File file = new File(FILE);
-        if (!file.exists()) return null;
-
-        try (Scanner reader = new Scanner(file)) {
-            while (reader.hasNextLine()) {
-                String line = reader.nextLine();
-                String[] data = line.split(",");
-                if (data.length < 4) continue;
-                if (data[1].equals(id)) {
-                    return new UserData(data[1], data[2], data[3], data[0]);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         return null;
     }
 
-    static UserData getUserByUsername(String username) {
-        File file = new File(FILE);
-        if (!file.exists()) return null;
-
-        try (Scanner reader = new Scanner(file)) {
-            while (reader.hasNextLine()) {
-                String line = reader.nextLine();
-                String[] data = line.split(",");
-                if (data.length < 4) continue;
-                if (data[2].equals(username)) {
-                    return new UserData(data[1], data[2], data[3], data[0]);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    public BaseUser getUserById(String id) {
+        for (BaseUser u : getAll()) {
+            if (u.getId().equals(id)) return u;
         }
         return null;
     }
 
-    static boolean hasAdmin() {
-        File file = new File(FILE);
-        if (!file.exists()) return false;
+    public BaseUser getUserByUsername(String username) {
+        for (BaseUser u : getAll()) {
+            if (u.getUsername().equals(username)) return u;
+        }
+        return null;
+    }
 
-        try (Scanner reader = new Scanner(file)) {
-            while (reader.hasNextLine()) {
-                String line = reader.nextLine();
-                String[] data = line.split(",");
-                if (data.length < 3) continue;
-                if ("ADMIN".equals(data[0])) {
-                    return true;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    public boolean hasAdmin() {
+        for (BaseUser u : getAll()) {
+            if ("ADMIN".equals(u.getRole())) return true;
         }
         return false;
     }
@@ -128,6 +68,7 @@ class AuthService {
 
 public class User {
     static void menu(Scanner sc) {
+        AuthService authService = new AuthService();
         System.out.println("Welcome to AuthService");
         System.out.println("Press 1. login");
         System.out.println("Press 2. Register");
@@ -144,7 +85,7 @@ public class User {
                 id = sc.next();
                 System.out.print("Enter your password: ");
                 password = sc.next();
-                role = AuthService.login(id, password);
+                role = authService.login(id, password);
                 if (role != null) {
                     System.out.println("Login successful");
                 } else {
@@ -160,8 +101,16 @@ public class User {
                 password = sc.next();
                 System.out.print("Enter your role: ");
                 role = sc.next();
-                UserData user = new UserData(id, username, password, role);
-                AuthService.register(user);
+                BaseUser user = null;
+                if (role.toUpperCase().equals("ADMIN")) user = new AdminUser(id, username, password);
+                else if (role.toUpperCase().equals("FACULTY")) user = new Faculty(id, username, password);
+                else if (role.toUpperCase().equals("STUDENT")) user = new Student(id, username, password);
+                
+                if (user != null) {
+                    authService.register(user);
+                } else {
+                    System.out.println("Invalid role");
+                }
                 break;
             case 3:
                 System.exit(0);

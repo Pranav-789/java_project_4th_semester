@@ -5,27 +5,29 @@ public class FacultyService {
     private List<Faculty> faculties;
     private AuthService authService;
     private CourseService courseService;
+    private EnrollmentService enrollmentService;
 
     public FacultyService(AuthService authService, CourseService courseService) {
         this.faculties = new ArrayList<>();
         this.authService = authService;
         this.courseService = courseService;
+        this.enrollmentService = new EnrollmentService();
     }
 
     public Faculty login(String id, String password) {
         try {
-            if (AuthService.login(id, password) != null) {
+            if (authService.login(id, password) != null) {
                  for (Faculty f : faculties) {
-                     if (f.getFacultyId().equals(id)) {
+                     if (f.getId().equals(id)) {
                          return f;
                      }
                  }
                  
                  // Rehydrate if not natively stored
-                 UserData data = AuthService.getUserById(id);
-                 if (data == null) data = AuthService.getUserByUsername(id);
-                 if (data != null && "FACULTY".equals(data.roleString)) {
-                     Faculty rehydrated = new Faculty(data.id, data.username, data.passwordString);
+                 BaseUser data = authService.getUserById(id);
+                 if (data == null) data = authService.getUserByUsername(id);
+                 if (data != null && "FACULTY".equals(data.getRole())) {
+                     Faculty rehydrated = new Faculty(data.getId(), data.getUsername(), data.getPassword());
                      faculties.add(rehydrated);
                      return rehydrated;
                  }
@@ -35,7 +37,7 @@ public class FacultyService {
         }
 
         for (Faculty f : faculties) {
-            if (f.getFacultyId().equals(id) && f.getPassword().equals(password)) {
+            if (f.getId().equals(id) && f.getPassword().equals(password)) {
                 return f;
             }
         }
@@ -44,12 +46,12 @@ public class FacultyService {
 
     public void viewMyCourses(Faculty faculty) {
         System.out.println("\n--- My Assigned Courses ---");
-        CourseData[] allCourses = CourseService.getAllCourses();
+        List<CourseData> allCourses = courseService.getAll();
         boolean found = false;
 
         if (allCourses != null) {
             for (CourseData c : allCourses) {
-                if (faculty.getName().equals(c.facultyUsername)) {
+                if (faculty.getUsername().equals(c.facultyUsername)) {
                     System.out.println(c.courseId + " | " + c.courseName);
                     found = true;
                 }
@@ -63,20 +65,20 @@ public class FacultyService {
 
     public void viewEnrolledStudents(Faculty faculty, String courseId) {
         CourseData course = null;
-        for (CourseData c : CourseService.getAllCourses()) {
+        for (CourseData c : courseService.getAll()) {
             if (c.courseId.equals(courseId)) {
                 course = c;
                 break;
             }
         }
         
-        if (course == null || !faculty.getName().equals(course.facultyUsername)) {
+        if (course == null || !faculty.getUsername().equals(course.facultyUsername)) {
             System.out.println("Error: Course not found or not assigned to you.");
             return;
         }
 
         System.out.println("\n--- Students Enrolled in " + courseId + " ---");
-        EnrollmentData[] enrollments = EnrollmentService.getAllEnrollments();
+        List<EnrollmentData> enrollments = enrollmentService.getAll();
         boolean found = false;
         
         if (enrollments != null) {

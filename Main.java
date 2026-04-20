@@ -79,7 +79,7 @@ public class Main {
 
     private static void studentDashboard(Scanner scanner, StudentService studentService, Student student) {
         while (true) {
-            System.out.println("\n--- Student Dashboard | " + student.getName() + " ---");
+            System.out.println("\n--- Student Dashboard | " + student.getUsername() + " ---");
             System.out.println("1. View Available Courses");
             System.out.println("2. Enroll in a Course");
             System.out.println("3. Drop a Course");
@@ -133,7 +133,7 @@ public class Main {
 
     private static void facultyDashboard(Scanner scanner, FacultyService facultyService, Faculty faculty) {
         while (true) {
-            System.out.println("\n--- Faculty Dashboard | " + faculty.getName() + " ---");
+            System.out.println("\n--- Faculty Dashboard | " + faculty.getUsername() + " ---");
             System.out.println("1. View My Assigned Courses");
             System.out.println("2. View Enrolled Students for a Course");
             System.out.println("3. Logout");

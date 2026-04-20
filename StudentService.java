@@ -5,25 +5,27 @@ public class StudentService {
     private List<Student> students;
     private AuthService authService;
     private CourseService courseService;
+    private EnrollmentService enrollmentService;
 
     public StudentService(AuthService authService, CourseService courseService) {
         this.students = new ArrayList<>();
         this.authService = authService;
         this.courseService = courseService;
+        this.enrollmentService = new EnrollmentService();
     }
 
-    public void registerStudent(String id, String name, String password) {
+    public void registerStudent(String id, String username, String password) {
         for (Student s : students) {
             if (s.getId().equals(id)) {
                 System.out.println("Error: Student ID already exists.");
                 return;
             }
         }
-        Student newStudent = new Student(id, name, password);
+        Student newStudent = new Student(id, username, password);
         students.add(newStudent);
         
         try {
-            AuthService.register(new UserData(id, name, password, "STUDENT"));
+            authService.register(newStudent);
         } catch (Exception e) {
             // Fallback in case AuthService doesn't expose standard register directly
         }
@@ -33,7 +35,7 @@ public class StudentService {
     public Student login(String id, String password) {
         boolean authSuccess = false;
         try {
-            authSuccess = AuthService.login(id, password) != null;
+            authSuccess = authService.login(id, password) != null;
         } catch (Exception e) {
             // Local fallback if AuthService logic handles roles differently
             authSuccess = true; 
@@ -47,11 +49,11 @@ public class StudentService {
             }
             
             // Re-hydrate from file if the service was restarted.
-            UserData data = AuthService.getUserById(id);
-            if (data == null) data = AuthService.getUserByUsername(id); // fallback
+            BaseUser data = authService.getUserById(id);
+            if (data == null) data = authService.getUserByUsername(id); // fallback
             
-            if (data != null && "STUDENT".equals(data.roleString)) {
-                Student rehydratedStudent = new Student(data.id, data.username, data.passwordString);
+            if (data != null && "STUDENT".equals(data.getRole())) {
+                Student rehydratedStudent = new Student(data.getId(), data.getUsername(), data.getPassword());
                 students.add(rehydratedStudent);
                 return rehydratedStudent;
             }
@@ -61,8 +63,8 @@ public class StudentService {
 
     public void viewAvailableCourses() {
         System.out.println("\n--- Available Courses ---");
-        CourseData[] courses = CourseService.getAllCourses();
-        if (courses == null || courses.length == 0) {
+        List<CourseData> courses = courseService.getAll();
+        if (courses == null || courses.size() == 0) {
             System.out.println("No courses currently available.");
             return;
         }
@@ -73,7 +75,7 @@ public class StudentService {
 
     public void enrollInCourse(Student student, String courseId) {
         CourseData course = null;
-        for (CourseData c : CourseService.getAllCourses()) {
+        for (CourseData c : courseService.getAll()) {
             if (c.courseId.equals(courseId)) {
                 course = c;
                 break;
@@ -85,7 +87,7 @@ public class StudentService {
             return;
         }
 
-        EnrollmentData[] enrollments = EnrollmentService.getAllEnrollments();
+        List<EnrollmentData> enrollments = enrollmentService.getAll();
         if (enrollments != null) {
             for (EnrollmentData e : enrollments) {
                 if (e.StudentUsername.equals(student.getId()) && e.CourseId.equals(courseId)) {
@@ -96,20 +98,20 @@ public class StudentService {
         }
 
         EnrollmentData newEnrollment = new EnrollmentData(student.getId(), courseId);
-        EnrollmentService.enroll(newEnrollment);
+        enrollmentService.save(newEnrollment);
         System.out.println("Success: Enrolled in " + courseId + ".");
     }
 
     public void viewMyCourses(Student student) {
         System.out.println("\n--- My Enrolled Courses ---");
-        EnrollmentData[] enrollments = EnrollmentService.getAllEnrollments();
+        List<EnrollmentData> enrollments = enrollmentService.getAll();
         boolean found = false;
 
         if (enrollments != null) {
             for (EnrollmentData e : enrollments) {
                 if (e.StudentUsername.equals(student.getId())) {
                     CourseData c = null;
-                    for (CourseData cd : CourseService.getAllCourses()) {
+                    for (CourseData cd : courseService.getAll()) {
                         if (cd.courseId.equals(e.CourseId)) {
                             c = cd;
                             break;
@@ -130,7 +132,7 @@ public class StudentService {
     public void dropCourse(Student student, String courseId) {
         boolean dropped = false;
         try {
-            dropped = EnrollmentService.removeEnrollment(student.getId(), courseId);
+            dropped = enrollmentService.removeEnrollment(student.getId(), courseId);
         } catch (Exception ex) {
             System.out.println("Error: Unable to drop course. Ensure the ID is correct.");
             return;

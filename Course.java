@@ -1,10 +1,8 @@
-import java.io.FileWriter;
-import java.util.Scanner;
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
+import java.io.FileWriter;
 
-class CourseData{
+class CourseData implements FileSerializable {
     String courseId;
     String courseName;
     String facultyUsername;
@@ -15,49 +13,49 @@ class CourseData{
         this.facultyUsername = facultyUsername;
     }
 
+    @Override
     public String toFileString(){
         return courseId + "," + courseName + "," + facultyUsername;
     }
 }
 
-class CourseService{
-
+class CourseService extends AbstractFileService<CourseData> {
     public static final String FILE = "Courses.txt";
 
-    static void addCourse(CourseData course){
-        try(FileWriter fw = new FileWriter(FILE, true)){
-            fw.write(course.toFileString() + "\n");
-        }catch(Exception e){
-            e.printStackTrace();
-        }
+    public CourseService() {
+        super(FILE);
     }
 
-    static CourseData[] getAllCourses(){
-        try {
-            File file = new File(FILE);
-            if (!file.exists()) {
-                return new CourseData[0];
-            }
-            Scanner sc = new Scanner(file);
-            List<CourseData> allCourseData = new ArrayList<>();
+    @Override
+    protected CourseData parseLine(String[] data) {
+        if(data.length < 3) return null;
+        return new CourseData(data[0], data[1], data[2]);
+    }
 
-            while(sc.hasNextLine()){
-                String line = sc.nextLine();
-                String[] data = line.split(",");
-                if(data.length < 3)
-                    continue;
-                String courseId = data[0];
-                String courseName = data[1];
-                String facultyUsername = data[2];
-                CourseData course = new CourseData(courseId, courseName, facultyUsername);
-                allCourseData.add(course);
+    public boolean updateCourseFaculty(String courseId, String newFacultyUsername) {
+        boolean updated = false;
+        List<CourseData> courses = getAll();
+        
+        for (CourseData c : courses) {
+            if (c.courseId.equals(courseId)) {
+                c.facultyUsername = newFacultyUsername;
+                updated = true;
             }
-            sc.close();
-            return allCourseData.toArray(new CourseData[0]);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return new CourseData[0];
+        
+        if (updated) {
+            try {
+                File file = new File(filePath);
+                FileWriter fw = new FileWriter(file, false);
+                for (CourseData c : courses) {
+                    fw.write(c.toFileString() + "\n");
+                }
+                fw.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return updated;
     }
 }
 
