@@ -16,7 +16,8 @@ public class Main {
             System.out.println("==================================");
             System.out.println("1. Student Login / Register");
             System.out.println("2. Faculty Login");
-            System.out.println("3. Exit System");
+            System.out.println("3. Admin Login");
+            System.out.println("4. Exit System");
             System.out.print("Select Menu Option: ");
             
             String choice = scanner.nextLine().trim();
@@ -29,6 +30,9 @@ public class Main {
                     handleFacultyMenu(scanner, facultyService);
                     break;
                 case "3":
+                    handleAdminMenu(scanner, authService);
+                    break;
+                case "4":
                     System.out.println("Shutting down the system. Goodbye!");
                     scanner.close();
                     return;
@@ -151,6 +155,77 @@ public class Main {
                     facultyService.viewEnrolledStudents(faculty, courseId);
                     break;
                 case "3":
+                    System.out.println("Logging off...");
+                    return;
+                default:
+                    System.out.println("Invalid selection. Try again.");
+            }
+        }
+    }
+
+    private static void handleAdminMenu(Scanner scanner, AuthService authService) {
+        System.out.println("\n--- Admin Access ---");
+        System.out.print("Enter Admin ID/Username: ");
+        String id = scanner.nextLine().trim();
+        System.out.print("Enter Password: ");
+        String password = scanner.nextLine().trim();
+        
+        // Use basic auth to check role
+        String role = authService.login(id, password);
+        if ("ADMIN".equals(role)) {
+            System.out.println("Login Successful.");
+            adminDashboard(scanner);
+        } else {
+            System.out.println("Error: Invalid ID or Password or Not an Admin.");
+        }
+    }
+
+    private static void adminDashboard(Scanner scanner) {
+        AdminService adminService = new AdminService();
+        while (true) {
+            System.out.println("\n--- Admin Dashboard ---");
+            System.out.println("1. Add User (Admin/Faculty/Student)");
+            System.out.println("2. View All Courses");
+            System.out.println("3. Create Course");
+            System.out.println("4. Change Course Faculty");
+            System.out.println("5. Logout");
+            System.out.print("Select Option: ");
+            
+            String choice = scanner.nextLine().trim();
+            
+            switch (choice) {
+                case "1":
+                    System.out.print("Enter New ID: ");
+                    String newId = scanner.nextLine().trim();
+                    System.out.print("Enter Username: ");
+                    String username = scanner.nextLine().trim();
+                    System.out.print("Enter Password: ");
+                    String userPass = scanner.nextLine().trim();
+                    System.out.print("Enter Role (ADMIN/FACULTY/STUDENT): ");
+                    String userRole = scanner.nextLine().trim().toUpperCase();
+                    adminService.addUser(newId, username, userPass, userRole);
+                    break;
+                case "2":
+                    System.out.println("\n--- All Courses ---");
+                    adminService.viewAllCourses();
+                    break;
+                case "3":
+                    System.out.print("Enter Course ID: ");
+                    String courseId = scanner.nextLine().trim();
+                    System.out.print("Enter Course Name: ");
+                    String courseName = scanner.nextLine().trim();
+                    System.out.print("Enter Faculty Username: ");
+                    String facultyUsername = scanner.nextLine().trim();
+                    adminService.createCourse(courseId, courseName, facultyUsername);
+                    break;
+                case "4":
+                    System.out.print("Enter Course ID: ");
+                    String editCourseId = scanner.nextLine().trim();
+                    System.out.print("Enter New Faculty Username: ");
+                    String newFacultyUser = scanner.nextLine().trim();
+                    adminService.changeCourseFaculty(editCourseId, newFacultyUser);
+                    break;
+                case "5":
                     System.out.println("Logging off...");
                     return;
                 default:
