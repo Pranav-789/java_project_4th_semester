@@ -66,17 +66,15 @@ public class Main {
             }
             
         } else if (option.equals("2")) {
-            System.out.print("Enter New ID: ");
-            String id = scanner.nextLine().trim();
             System.out.print("Enter Full Name: ");
             String name = scanner.nextLine().trim();
             System.out.print("Enter Password: ");
             String pass = scanner.nextLine().trim();
             
-            if (id.isEmpty() || name.isEmpty() || pass.isEmpty()) {
+            if (name.isEmpty() || pass.isEmpty()) {
                 System.out.println("Error: All fields are required to register.");
             } else {
-                studentService.registerStudent(id, name, pass);
+                studentService.registerStudent(name, pass);
             }
         }
     }
@@ -195,15 +193,13 @@ public class Main {
             
             switch (choice) {
                 case "1":
-                    System.out.print("Enter New ID: ");
-                    String newId = scanner.nextLine().trim();
                     System.out.print("Enter Username: ");
                     String username = scanner.nextLine().trim();
                     System.out.print("Enter Password: ");
                     String userPass = scanner.nextLine().trim();
                     System.out.print("Enter Role (ADMIN/FACULTY/STUDENT): ");
                     String userRole = scanner.nextLine().trim().toUpperCase();
-                    adminService.addUser(newId, username, userPass, userRole);
+                    adminService.addUser(username, userPass, userRole);
                     break;
                 case "2":
                     System.out.println("\n--- All Courses ---");
@@ -214,16 +210,16 @@ public class Main {
                     String courseId = scanner.nextLine().trim();
                     System.out.print("Enter Course Name: ");
                     String courseName = scanner.nextLine().trim();
-                    System.out.print("Enter Faculty Username: ");
-                    String facultyUsername = scanner.nextLine().trim();
-                    adminService.createCourse(courseId, courseName, facultyUsername);
+                    System.out.print("Enter Faculty ID: ");
+                    String facultyId = scanner.nextLine().trim();
+                    adminService.createCourse(courseId, courseName, facultyId);
                     break;
                 case "4":
                     System.out.print("Enter Course ID: ");
                     String editCourseId = scanner.nextLine().trim();
-                    System.out.print("Enter New Faculty Username: ");
-                    String newFacultyUser = scanner.nextLine().trim();
-                    adminService.changeCourseFaculty(editCourseId, newFacultyUser);
+                    System.out.print("Enter New Faculty ID: ");
+                    String newFacultyId = scanner.nextLine().trim();
+                    adminService.changeCourseFaculty(editCourseId, newFacultyId);
                     break;
                 case "5":
                     System.out.println("Logging off...");

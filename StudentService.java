@@ -1,62 +1,45 @@
-import java.util.ArrayList;
 import java.util.List;
 
 public class StudentService {
-    private List<Student> students;
     private AuthService authService;
     private CourseService courseService;
     private EnrollmentService enrollmentService;
 
     public StudentService(AuthService authService, CourseService courseService) {
-        this.students = new ArrayList<>();
         this.authService = authService;
         this.courseService = courseService;
         this.enrollmentService = new EnrollmentService();
     }
 
-    public void registerStudent(String id, String username, String password) {
-        for (Student s : students) {
-            if (s.getId().equals(id)) {
-                System.out.println("Error: Student ID already exists.");
-                return;
-            }
+    public void registerStudent(String username, String password) {
+        if (authService.getUserByUsername(username) != null) {
+            System.out.println("Error: Username already exists.");
+            return;
         }
+
+        String id = authService.generateId("STUDENT");
         Student newStudent = new Student(id, username, password);
-        students.add(newStudent);
         
         try {
             authService.register(newStudent);
         } catch (Exception e) {
-            // Fallback in case AuthService doesn't expose standard register directly
+            e.printStackTrace();
         }
-        System.out.println("Student registered successfully.");
+        System.out.println("Student registered successfully with ID: " + id);
     }
 
     public Student login(String id, String password) {
-        boolean authSuccess = false;
         try {
-            authSuccess = authService.login(id, password) != null;
+            if ("STUDENT".equals(authService.login(id, password))) {
+                 BaseUser data = authService.getUserById(id);
+                 if (data == null) data = authService.getUserByUsername(id);
+                 
+                 if (data != null && "STUDENT".equals(data.getRole())) {
+                     return new Student(data.getId(), data.getUsername(), data.getPassword());
+                 }
+            }
         } catch (Exception e) {
-            // Local fallback if AuthService logic handles roles differently
-            authSuccess = true; 
-        }
-
-        if (authSuccess) {
-            for (Student s : students) {
-                if (s.getId().equals(id) && s.getPassword().equals(password)) {
-                    return s;
-                }
-            }
-            
-            // Re-hydrate from file if the service was restarted.
-            BaseUser data = authService.getUserById(id);
-            if (data == null) data = authService.getUserByUsername(id); // fallback
-            
-            if (data != null && "STUDENT".equals(data.getRole())) {
-                Student rehydratedStudent = new Student(data.getId(), data.getUsername(), data.getPassword());
-                students.add(rehydratedStudent);
-                return rehydratedStudent;
-            }
+            e.printStackTrace();
         }
         return null;
     }
@@ -90,7 +73,7 @@ public class StudentService {
         List<EnrollmentData> enrollments = enrollmentService.getAll();
         if (enrollments != null) {
             for (EnrollmentData e : enrollments) {
-                if (e.StudentUsername.equals(student.getId()) && e.CourseId.equals(courseId)) {
+                if (e.studentId.equals(student.getId()) && e.courseId.equals(courseId)) {
                     System.out.println("Error: You are already enrolled in this course.");
                     return;
                 }
@@ -109,10 +92,10 @@ public class StudentService {
 
         if (enrollments != null) {
             for (EnrollmentData e : enrollments) {
-                if (e.StudentUsername.equals(student.getId())) {
+                if (e.studentId.equals(student.getId())) {
                     CourseData c = null;
                     for (CourseData cd : courseService.getAll()) {
-                        if (cd.courseId.equals(e.CourseId)) {
+                        if (cd.courseId.equals(e.courseId)) {
                             c = cd;
                             break;
                         }

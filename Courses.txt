@@ -1,1 +1,3 @@
-101,Computer Networks,Bundbaaz
+101,Computer Networks,FAC01
+102,Operating System,FAC02
+103,Java Programming,FAC03

@@ -1,14 +1,11 @@
-import java.util.ArrayList;
 import java.util.List;
 
 public class FacultyService {
-    private List<Faculty> faculties;
     private AuthService authService;
     private CourseService courseService;
     private EnrollmentService enrollmentService;
 
     public FacultyService(AuthService authService, CourseService courseService) {
-        this.faculties = new ArrayList<>();
         this.authService = authService;
         this.courseService = courseService;
         this.enrollmentService = new EnrollmentService();
@@ -16,30 +13,15 @@ public class FacultyService {
 
     public Faculty login(String id, String password) {
         try {
-            if (authService.login(id, password) != null) {
-                 for (Faculty f : faculties) {
-                     if (f.getId().equals(id)) {
-                         return f;
-                     }
-                 }
-                 
-                 // Rehydrate if not natively stored
+            if ("FACULTY".equals(authService.login(id, password))) {
                  BaseUser data = authService.getUserById(id);
                  if (data == null) data = authService.getUserByUsername(id);
                  if (data != null && "FACULTY".equals(data.getRole())) {
-                     Faculty rehydrated = new Faculty(data.getId(), data.getUsername(), data.getPassword());
-                     faculties.add(rehydrated);
-                     return rehydrated;
+                     return new Faculty(data.getId(), data.getUsername(), data.getPassword());
                  }
             }
         } catch (Exception e) {
-            // Local fallback validation
-        }
-
-        for (Faculty f : faculties) {
-            if (f.getId().equals(id) && f.getPassword().equals(password)) {
-                return f;
-            }
+            e.printStackTrace();
         }
         return null;
     }
@@ -51,7 +33,7 @@ public class FacultyService {
 
         if (allCourses != null) {
             for (CourseData c : allCourses) {
-                if (faculty.getUsername().equals(c.facultyUsername)) {
+                if (faculty.getId().equals(c.facultyId)) {
                     System.out.println(c.courseId + " | " + c.courseName);
                     found = true;
                 }
@@ -72,7 +54,7 @@ public class FacultyService {
             }
         }
         
-        if (course == null || !faculty.getUsername().equals(course.facultyUsername)) {
+        if (course == null || !faculty.getId().equals(course.facultyId)) {
             System.out.println("Error: Course not found or not assigned to you.");
             return;
         }
@@ -83,8 +65,8 @@ public class FacultyService {
         
         if (enrollments != null) {
             for (EnrollmentData e : enrollments) {
-                if (e.CourseId.equals(courseId)) {
-                    System.out.println("Student ID: " + e.StudentUsername);
+                if (e.courseId.equals(courseId)) {
+                    System.out.println("Student ID: " + e.studentId);
                     found = true;
                 }
             }

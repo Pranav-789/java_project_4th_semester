@@ -1,3 +1,6 @@
-ADMIN,ADMIN01,Admin,Admin@123
-FACULTY,FAC01,Bundbaaz,bund@123
-STUDENT,Pranav,Pranav,pranav@30406
+ADMIN,ADMIN001,Admin,Admin@123
+FACULTY,FAC001,Habila Basumatary,habila@123
+STUDENT,STD001,Pranav,pranav@30406
+FACULTY,FAC002,Mahesh Joshi,joshi@123
+FACULTY,FAC003,Srikant Salve,salve@123
+STUDENT,STD002,Prateek Kumar,kumar@123
