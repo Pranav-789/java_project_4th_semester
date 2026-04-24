@@ -14,11 +14,11 @@ public class FacultyService {
     public Faculty login(String id, String password) {
         try {
             if ("FACULTY".equals(authService.login(id, password))) {
-                 BaseUser data = authService.getUserById(id);
-                 if (data == null) data = authService.getUserByUsername(id);
-                 if (data != null && "FACULTY".equals(data.getRole())) {
-                     return new Faculty(data.getId(), data.getUsername(), data.getPassword());
-                 }
+                BaseUser data = authService.getUserById(id);
+                if (data == null) data = authService.getUserByUsername(id);
+                if (data != null && "FACULTY".equals(data.getRole())) {
+                    return new Faculty(data.getId(), data.getUsername(), data.getPassword());
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
